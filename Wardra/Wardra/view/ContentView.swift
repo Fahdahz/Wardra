@@ -35,12 +35,10 @@ struct ContentView: View {
             )
             
         case .closet:
-            ClosetView(viewModel: ClosetViewModel())
+            ClosetView()
         }
     }
 }
-
-
 
 #Preview {
     ContentView()
