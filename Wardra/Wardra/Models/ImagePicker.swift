@@ -9,26 +9,18 @@ import SwiftUI
 import UIKit
 
 struct ImagePicker: UIViewControllerRepresentable {
-    enum Source {
-        case camera
-        case library
+    typealias UIViewControllerType = UIImagePickerController
 
-        var type: UIImagePickerController.SourceType {
-            switch self {
-            case .camera: return .camera
-            case .library: return .photoLibrary
-            }
-        }
-    }
-
-    let source: Source
+    let sourceType: UIImagePickerController.SourceType
     let onImagePicked: (UIImage) -> Void
+
     @Environment(\.dismiss) private var dismiss
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
-        picker.sourceType = source.type
+        picker.sourceType = sourceType
         picker.delegate = context.coordinator
+        picker.allowsEditing = false
         return picker
     }
 
@@ -47,13 +39,15 @@ struct ImagePicker: UIViewControllerRepresentable {
             self.dismiss = dismiss
         }
 
-        func imagePickerController(
-            _ picker: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]
-        ) {
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[.originalImage] as? UIImage {
                 onImagePicked(image)
             }
+            dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             dismiss()
         }
     }

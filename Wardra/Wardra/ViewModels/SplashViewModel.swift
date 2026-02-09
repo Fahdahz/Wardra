@@ -10,21 +10,14 @@ import Combine
 
 @MainActor
 final class SplashViewModel: ObservableObject {
-    @Published var finished = false
-
+    
     private let onFinish: () -> Void
-    private let duration: UInt64 = 3_000_000_000 // 3 seconds
-
+    
     init(onFinish: @escaping () -> Void) {
         self.onFinish = onFinish
     }
-
+    
     func start() {
-        Task {
-            try? await Task.sleep(nanoseconds: duration)
-            finished = true
-            onFinish()
-        }
+        onFinish()
     }
 }
-

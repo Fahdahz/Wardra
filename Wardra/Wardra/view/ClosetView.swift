@@ -8,26 +8,75 @@
 import SwiftUI
 
 struct ClosetView: View {
-    @StateObject var viewModel: ClosetViewModel
-
+    
+    @StateObject var viewModel = ClosetViewModel()
+    @State private var showUpload = false
+    
     var body: some View {
-        VStack {
+        ZStack {
+            
+            Color("WardraBackground")
+                .ignoresSafeArea()
+            
             if viewModel.items.isEmpty {
-                Text("Your closet is empty")
+                
+                VStack(spacing: 20) {
+                    Text("Your Closet is empty :(")
+                        .font(.title2)
+                    
+                    Text("Start Adding Clothes!")
+                        .foregroundColor(.gray)
+                }
+                
             } else {
-                List(viewModel.items) { item in
-                    Text(item.category.rawValue)
+                
+                ScrollView {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 120))],
+                        spacing: 16
+                    ) {
+                        ForEach(viewModel.items) { item in
+                            Image(uiImage: item.image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 120)
+                                .clipped()
+                                .cornerRadius(12)
+                        }
+                    }
+                    .padding()
                 }
             }
-
-            Button("+ Add") {
-                viewModel.showUpload = true
+            
+            // MARK: - Plus Button
+            
+            VStack {
+                Spacer()
+                
+                Button {
+                    showUpload = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color("WardraPink"))
+                            .frame(width: 65, height: 65)
+                        
+                        Image(systemName: "plus")
+                            .font(.system(size: 26))
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.bottom, 40)
             }
         }
-        .sheet(isPresented: $viewModel.showUpload) {
-            UploadClothesView(viewModel: UploadClothesViewModel()) { item in
-                viewModel.add(item: item)
-            }
+        .sheet(isPresented: $showUpload) {
+            
+            UploadClothesView(
+                viewModel: UploadClothesViewModel(),
+                onSave: { item in
+                    viewModel.addItem(item)
+                }
+            )
         }
     }
 }

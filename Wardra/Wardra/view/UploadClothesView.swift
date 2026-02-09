@@ -6,122 +6,134 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct UploadClothesView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject var viewModel: UploadClothesViewModel
-    let onSave: (ClothingItem) -> Void
 
+    @ObservedObject var viewModel: UploadClothesViewModel
+    var onSave: (ClothingItem) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var showSourceDialog = false
     @State private var showPicker = false
-    @State private var pickerSource: ImagePicker.Source = .library
+    @State private var pickerSourceType: UIImagePickerController.SourceType = .photoLibrary
 
     var body: some View {
         ZStack {
-            Color(hex: "#FBF6F1").ignoresSafeArea()
+            Color(red: 0.96, green: 0.94, blue: 0.92)
+                .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 18) {
 
-                // Header
                 HStack {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.black)
-                            .font(.title3)
+                            .padding(10)
                     }
                     Spacer()
                 }
+                .padding(.horizontal)
 
                 Text("Upload your\nclothes")
-                    .font(.system(size: 32, weight: .regular, design: .serif))
+                    .font(.system(size: 38, weight: .semibold, design: .serif))
                     .multilineTextAlignment(.center)
 
-                // Upload Box
+                // Upload box
                 Button {
-                    showPicker = true
+                    showSourceDialog = true
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                            .foregroundColor(Color(hex: "#E5B7C5"))
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color(red: 0.82, green: 0.67, blue: 0.70),
+                                    style: StrokeStyle(lineWidth: 3, dash: [10]))
                             .frame(height: 240)
 
-                        if let image = viewModel.processedImage {
-                            Image(uiImage: image)
+                        if let img = viewModel.processedImage ?? viewModel.originalImage {
+                            Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
+                                .frame(height: 220)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                                 .padding(10)
                         } else {
                             Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 44))
-                                .foregroundColor(Color(hex: "#E5B7C5"))
+                                .font(.system(size: 40, weight: .regular))
+                                .foregroundColor(Color(red: 0.82, green: 0.67, blue: 0.70))
                         }
                     }
                 }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 24)
 
-                // Category Picker
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Pick Clothing Category")
-                        .font(.system(size: 18, design: .serif))
+                Text("Pick Clothing Catagory")
+                    .font(.system(size: 20, weight: .regular, design: .serif))
 
-                    Menu {
-                        ForEach(ClothingCategory.allCases) { category in
-                            Button(category.rawValue) {
-                                viewModel.category = category
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Text(viewModel.category.rawValue)
-                            Spacer()
-                            Image(systemName: "chevron.down")
-                        }
-                        .padding()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(hex: "#E5B7C5"))
-                        )
-                    }
+                Picker("Category", selection: $viewModel.category) {
+                    Text("Top").tag(ClothingCategory.top)
+                    Text("Bottom").tag(ClothingCategory.bottom)
+                }
+                .pickerStyle(.menu)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(red: 0.82, green: 0.67, blue: 0.70), lineWidth: 1.5)
+                )
+                .padding(.horizontal, 24)
+
+                if viewModel.isProcessing {
+                    ProgressView("Removing background...")
+                        .padding(.top, 6)
                 }
 
-                Spacer()
+                if let error = viewModel.error {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.footnote)
+                        .padding(.top, 4)
+                }
 
-                // Save Button
                 Button {
-                    if let item = viewModel.createItem() {
-                        onSave(item)
-                        dismiss()
-                    }
+                    guard let item = viewModel.createItem() else { return }
+                    onSave(item)
+                    dismiss()
                 } label: {
                     Text("Save to closet")
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color(hex: "#D7B7BC"))
+                        .font(.system(size: 20, weight: .semibold, design: .serif))
                         .foregroundColor(.white)
-                        .font(.system(size: 18, weight: .semibold, design: .serif))
-                        .cornerRadius(10)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(Color(red: 0.82, green: 0.67, blue: 0.70))
+                        )
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                Spacer(minLength: 10)
             }
-            .padding()
         }
-        .confirmationDialog("Upload image", isPresented: $showPicker) {
+        .confirmationDialog("Upload image", isPresented: $showSourceDialog) {
             Button("Take Photo") {
-                pickerSource = .camera
+                pickerSourceType = .camera
+                showPicker = true
             }
             Button("Choose from Library") {
-                pickerSource = .library
+                pickerSourceType = .photoLibrary
+                showPicker = true
             }
+            Button("Cancel", role: .cancel) {}
         }
-        .sheet(isPresented: Binding(
-            get: { pickerSource != nil && showPicker },
-            set: { _ in }
-        )) {
-            ImagePicker(source: pickerSource) { image in
+        .sheet(isPresented: $showPicker) {
+            ImagePicker(sourceType: pickerSourceType) { image in
                 viewModel.setImage(image)
-                showPicker = false
             }
         }
     }
 }
-

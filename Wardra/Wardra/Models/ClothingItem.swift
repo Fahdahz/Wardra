@@ -5,18 +5,10 @@
 //  Created by Fahdah Alsamari on 16/08/1447 AH.
 //
 
-import Foundation
+import UIKit
 
-struct ClothingItem: Identifiable, Codable {
+struct ClothingItem: Identifiable {
     let id: UUID
+    let image: UIImage
     let category: ClothingCategory
-    let imageData: Data
-    let createdAt: Date
-
-    init(category: ClothingCategory, imageData: Data) {
-        self.id = UUID()
-        self.category = category
-        self.imageData = imageData
-        self.createdAt = Date()
-    }
 }
