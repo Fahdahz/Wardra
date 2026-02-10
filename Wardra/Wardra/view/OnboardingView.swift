@@ -10,6 +10,9 @@ import SwiftUI
 struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     
+    // ✅ حفظ الاسم
+    @AppStorage("userFirstName") private var userFirstName: String = ""
+    
     var body: some View {
         ZStack {
             
@@ -55,6 +58,11 @@ struct OnboardingView: View {
                 // MARK: Button
                 Button {
                     viewModel.submit()
+                    
+                    // ✅ إذا ما فيه خطأ، خزّني الاسم
+                    if viewModel.error == nil {
+                        userFirstName = viewModel.firstName
+                    }
                 } label: {
                     Text("My Closet")
                         .font(.system(size: 18, weight: .semibold, design: .serif))

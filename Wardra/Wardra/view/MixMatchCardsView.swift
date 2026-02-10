@@ -17,8 +17,8 @@ struct MixMatchCardsView: View {
             let h = geo.size.height
 
             // Tuned to match the reference screenshot proportions
-            let cardW = min(360, w * 0.86)
-            let cardH = min(520, h * 0.62)
+           // let cardW = min(360, w * 0.86)
+            //let cardH = min(520, h * 0.62)
 
             ZStack {
                 Color("WardraBackground").ignoresSafeArea()
