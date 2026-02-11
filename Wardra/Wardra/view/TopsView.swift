@@ -65,21 +65,7 @@ struct TopsView: View {
 
                 Spacer()
 
-                // MARK: - Bottom Bar
-                HStack(spacing: 30) {
-                    Image(systemName: "hanger")
-                    Image(systemName: "square.grid.2x2.fill")
-                    Image(systemName: "tshirt")
-                }
-                .font(.system(size: 22))
-                .foregroundColor(accent)
-                .padding()
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.6))
-                        .shadow(radius: 5)
-                )
-                .padding(.bottom, 10)
+            
             }
         }
     }

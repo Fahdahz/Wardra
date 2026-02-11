@@ -9,16 +9,18 @@ import SwiftUI
 
 struct ClosetView: View {
     var body: some View {
-        TabView {
+        NavigationStack { // ✅ Added فقط عشان التنقل يشتغل
+            TabView {
 
-            ClosetContentView()
-                .tabItem { Image("HangerS") }
+                CanvasView()
+                    .tabItem { Image("HangerS") }
 
-            ClosetContentView()
-                .tabItem { Image("cardtabar") }
+                MixMatchCardsView()
+                    .tabItem { Image("cardtabar") }
 
-            ClosetContentView()
-                .tabItem { Image("tshirtS") }
+                ClosetContentView()
+                    .tabItem { Image("tshirtS") }
+            }
         }
     }
 }
@@ -149,63 +151,73 @@ private struct ClosetContentView: View {
 
                                 HStack(spacing: 16) {
 
-                                    // Tops
-                                    VStack(spacing: 8) {
+                                    // ✅ Tops (صار قابل للضغط ويفتح TopsView)
+                                    NavigationLink {
+                                        TopsView()
+                                    } label: {
+                                        VStack(spacing: 8) {
 
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .fill(Color("WardraPink"))
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(Color("WardraPink"))
 
-                                            Text("Tops")
-                                                .font(.custom("American Typewriter", size: 18))
-                                        }
-                                        .frame(height: 34)
-
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .fill(Color.white.opacity(0.35))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 16)
-                                                    .stroke(Color("WardraPink"), lineWidth: 3)
-                                            )
-                                            .overlay {
-                                                if let firstTop = tops.first {
-                                                    Image(uiImage: firstTop.image)
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .padding(14)
-                                                }
+                                                Text("Tops")
+                                                    .font(.custom("American Typewriter", size: 18))
                                             }
-                                            .frame(height: 140)
-                                    }
+                                            .frame(height: 34)
 
-                                    // Bottoms
-                                    VStack(spacing: 8) {
-
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .fill(Color("WardraPink"))
-
-                                            Text("Bottoms")
-                                                .font(.custom("American Typewriter", size: 18))
-                                        }
-                                        .frame(height: 34)
-
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .fill(Color.white.opacity(0.35))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 16)
-                                                    .stroke(Color("WardraPink"), lineWidth: 3)
-                                            )
-                                            .overlay {
-                                                if let firstBottom = bottoms.first {
-                                                    Image(uiImage: firstBottom.image)
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .padding(14)
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color.white.opacity(0.35))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .stroke(Color("WardraPink"), lineWidth: 3)
+                                                )
+                                                .overlay {
+                                                    if let firstTop = tops.first {
+                                                        Image(uiImage: firstTop.image)
+                                                            .resizable()
+                                                            .scaledToFit()
+                                                            .padding(14)
+                                                    }
                                                 }
-                                            }
-                                            .frame(height: 140)
+                                                .frame(height: 140)
+                                        }
                                     }
+                                    .buttonStyle(.plain) // ✅ عشان ما يغيّر شكل التصميم
+
+                                    // ✅ Bottoms (صار قابل للضغط ويفتح BottomsView)
+                                    NavigationLink {
+                                        BottomsView()
+                                    } label: {
+                                        VStack(spacing: 8) {
+
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(Color("WardraPink"))
+
+                                                Text("Bottoms")
+                                                    .font(.custom("American Typewriter", size: 18))
+                                            }
+                                            .frame(height: 34)
+
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color.white.opacity(0.35))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .stroke(Color("WardraPink"), lineWidth: 3)
+                                                )
+                                                .overlay {
+                                                    if let firstBottom = bottoms.first {
+                                                        Image(uiImage: firstBottom.image)
+                                                            .resizable()
+                                                            .scaledToFit()
+                                                            .padding(14)
+                                                    }
+                                                }
+                                                .frame(height: 140)
+                                        }
+                                    }
+                                    .buttonStyle(.plain) // ✅ عشان ما يغيّر شكل التصميم
                                 }
                                 .padding(.horizontal, 24)
                             }
@@ -251,3 +263,4 @@ private struct ClosetContentView: View {
 #Preview {
     ClosetView()
 }
+
