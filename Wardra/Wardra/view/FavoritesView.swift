@@ -1,63 +1,62 @@
+//
+//  FavoritesView.swift
+//  Wardra
+//
+//  Created by Fahdah Alsamari on 24/08/1447 AH.
+//
+
 import SwiftUI
 
-struct TopsView: View {
-
+struct FavoritesView: View {
+    
     @ObservedObject var viewModel: ClosetViewModel
     
-    private var topItems: [ClothingItem] {
-        viewModel.items.filter { $0.category == .top }
+    private var favoriteItems: [ClothingItem] {
+        viewModel.items.filter { $0.isFavorite }
     }
-
-    // Reuse your palette
-    private let bgColor = Color(red: 0.96, green: 0.94, blue: 0.92)
-    private let accent = Color(red: 0.75, green: 0.45, blue: 0.45) // matches bottom bar color
-
+    
     var body: some View {
         ZStack {
-
-            // Background
-            bgColor
+            Color("WardraBackground")
                 .ignoresSafeArea()
-
+            
             VStack(spacing: 0) {
-
+                
                 // MARK: - Header
                 VStack(spacing: 10) {
-
-                    // Hanger with centered title
                     ZStack {
                         Image("hanger 2")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 420, height: 120) // bigger hanger
-
-                        // Centered text relative to the hanger
-                        Text("Tops")
-                            .font(.system(size: 30, weight: .semibold, design: .serif)) // bigger text
+                            .frame(width: 420, height: 120)
+                        
+                        Text("My Favorites")
+                            .font(.system(size: 30, weight: .semibold, design: .serif))
                             .foregroundColor(.black)
-                            .offset(y: 10) // adjust to sit in the hanger opening
+                            .offset(y: 10)
                     }
                 }
                 .padding(.top, 10)
                 .padding(.bottom, 20)
-
+                
                 Divider()
-
-                // MARK: - Grid
-                if topItems.isEmpty {
+                
+                // MARK: - Content
+                if favoriteItems.isEmpty {
                     VStack(spacing: 20) {
                         Spacer()
                         
-                        Image(systemName: "tshirt")
+                        Image(systemName: "heart.slash")
                             .font(.system(size: 60))
                             .foregroundColor(Color("WardraPink"))
                         
-                        Text("No Tops Yet")
+                        Text("No Favorites Yet")
                             .font(.custom("American Typewriter", size: 28))
                         
-                        Text("Add some tops to your closet!")
+                        Text("Swipe right on Mix & Match\nto add favorites!")
                             .font(.custom("American Typewriter", size: 16))
                             .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
                         
                         Spacer()
                     }
@@ -70,24 +69,22 @@ struct TopsView: View {
                             ],
                             spacing: 16
                         ) {
-                            ForEach(topItems) { item in
-                                ItemCard(item: item, viewModel: viewModel)
+                            ForEach(favoriteItems) { item in
+                                FavoriteItemCard(item: item, viewModel: viewModel)
                             }
                         }
                         .padding()
                     }
                 }
-
+                
                 Spacer()
-
-            
             }
         }
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-struct ItemCard: View {
+struct FavoriteItemCard: View {
     let item: ClothingItem
     @ObservedObject var viewModel: ClosetViewModel
     
@@ -98,7 +95,7 @@ struct ItemCard: View {
                 .frame(height: 170)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.pink.opacity(0.2), lineWidth: 1)
+                        .stroke(Color("WardraPink"), lineWidth: 2)
                 )
                 .overlay {
                     if let image = item.image {
@@ -114,8 +111,8 @@ struct ItemCard: View {
             Button {
                 viewModel.toggleFavorite(item)
             } label: {
-                Image(systemName: item.isFavorite ? "heart.fill" : "heart")
-                    .font(.system(size: 18))
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 20))
                     .foregroundColor(Color("WardraPink"))
                     .padding(8)
                     .background(Color.white.opacity(0.9))
@@ -128,6 +125,6 @@ struct ItemCard: View {
 
 #Preview {
     NavigationStack {
-        TopsView(viewModel: ClosetViewModel())
+        FavoritesView(viewModel: ClosetViewModel())
     }
 }

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ClosetView: View {
+    @StateObject private var viewModel = ClosetViewModel()
+    
     var body: some View {
         NavigationStack { // ✅ Added فقط عشان التنقل يشتغل
             TabView {
@@ -15,10 +17,10 @@ struct ClosetView: View {
                 CanvasView()
                     .tabItem { Image("HangerS") }
 
-                MixMatchCardsView()
+                MixMatchCardsView(viewModel: viewModel)
                     .tabItem { Image("cardtabar") }
 
-                ClosetContentView()
+                ClosetContentView(viewModel: viewModel)
                     .tabItem { Image("tshirtS") }
             }
         }
@@ -27,7 +29,8 @@ struct ClosetView: View {
 
 private struct ClosetContentView: View {
 
-    @StateObject var viewModel = ClosetViewModel()
+    @ObservedObject var viewModel: ClosetViewModel
+
     @State private var showUpload = false
 
     @AppStorage("userFirstName") private var userFirstName: String = ""
@@ -120,27 +123,45 @@ private struct ClosetContentView: View {
                         VStack(spacing: 18) {
 
                             // My Favorites
-                            VStack(spacing: 10) {
+                            NavigationLink {
+                                FavoritesView(viewModel: viewModel)
+                            } label: {
+                                VStack(spacing: 10) {
 
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color("WardraPink"))
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(Color("WardraPink"))
 
-                                    Text("my Favorites")
-                                        .font(.custom("American Typewriter", size: 22))
-                                }
-                                .frame(height: 44)
-                                .padding(.horizontal, 24)
-
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.white.opacity(0.35))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 18)
-                                            .stroke(Color("WardraPink"), lineWidth: 3)
-                                    )
-                                    .frame(height: 180)
+                                        Text("my Favorites")
+                                            .font(.custom("American Typewriter", size: 22))
+                                    }
+                                    .frame(height: 44)
                                     .padding(.horizontal, 24)
+
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .fill(Color.white.opacity(0.35))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(Color("WardraPink"), lineWidth: 3)
+                                        )
+                                        .overlay {
+                                            if let firstFavorite = viewModel.items.filter({ $0.isFavorite }).first,
+                                               let image = firstFavorite.image {
+                                                Image(uiImage: image)
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .padding(14)
+                                            } else {
+                                                Image(systemName: "heart")
+                                                    .font(.system(size: 40))
+                                                    .foregroundColor(Color("WardraPink").opacity(0.5))
+                                            }
+                                        }
+                                        .frame(height: 180)
+                                        .padding(.horizontal, 24)
+                                }
                             }
+                            .buttonStyle(.plain)
 
                             // Items
                             VStack(alignment: .leading, spacing: 10) {
@@ -153,7 +174,7 @@ private struct ClosetContentView: View {
 
                                     // ✅ Tops (صار قابل للضغط ويفتح TopsView)
                                     NavigationLink {
-                                        TopsView()
+                                        TopsView(viewModel: viewModel)
                                     } label: {
                                         VStack(spacing: 8) {
 
@@ -173,8 +194,9 @@ private struct ClosetContentView: View {
                                                         .stroke(Color("WardraPink"), lineWidth: 3)
                                                 )
                                                 .overlay {
-                                                    if let firstTop = tops.first {
-                                                        Image(uiImage: firstTop.image)
+                                                    if let firstTop = tops.first,
+                                                       let image = firstTop.image {
+                                                        Image(uiImage: image)
                                                             .resizable()
                                                             .scaledToFit()
                                                             .padding(14)
@@ -187,7 +209,7 @@ private struct ClosetContentView: View {
 
                                     // ✅ Bottoms (صار قابل للضغط ويفتح BottomsView)
                                     NavigationLink {
-                                        BottomsView()
+                                        BottomsView(viewModel: viewModel)
                                     } label: {
                                         VStack(spacing: 8) {
 
@@ -207,8 +229,9 @@ private struct ClosetContentView: View {
                                                         .stroke(Color("WardraPink"), lineWidth: 3)
                                                 )
                                                 .overlay {
-                                                    if let firstBottom = bottoms.first {
-                                                        Image(uiImage: firstBottom.image)
+                                                    if let firstBottom = bottoms.first,
+                                                       let image = firstBottom.image {
+                                                        Image(uiImage: image)
                                                             .resizable()
                                                             .scaledToFit()
                                                             .padding(14)
@@ -263,4 +286,3 @@ private struct ClosetContentView: View {
 #Preview {
     ClosetView()
 }
-
