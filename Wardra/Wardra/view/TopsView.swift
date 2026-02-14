@@ -90,7 +90,9 @@ struct TopsView: View {
 struct ItemCard: View {
     let item: ClothingItem
     @ObservedObject var viewModel: ClosetViewModel
-    
+
+    @State private var showDeleteAlert = false
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             RoundedRectangle(cornerRadius: 20)
@@ -109,12 +111,12 @@ struct ItemCard: View {
                     }
                 }
                 .shadow(color: .black.opacity(0.05), radius: 5)
-            
-            // Favorite heart button
+
+            // ✅ Delete button (بدال الفيفرت)
             Button {
-                viewModel.toggleFavorite(item)
+                showDeleteAlert = true
             } label: {
-                Image(systemName: item.isFavorite ? "heart.fill" : "heart")
+                Image(systemName: "x.circle")
                     .font(.system(size: 18))
                     .foregroundColor(Color("WardraPink"))
                     .padding(8)
@@ -122,9 +124,18 @@ struct ItemCard: View {
                     .clipShape(Circle())
             }
             .padding(8)
+            .alert("Delete item?", isPresented: $showDeleteAlert) {
+                Button("Delete", role: .destructive) {
+                    viewModel.deleteItem(item)
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to delete this item?")
+            }
         }
     }
 }
+
 
 #Preview {
     NavigationStack {

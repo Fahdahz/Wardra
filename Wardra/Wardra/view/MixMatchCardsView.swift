@@ -69,9 +69,8 @@ struct MixMatchCardsView: View {
                                     topItem: top,
                                     bottomItem: bottom,
                                     onSwipeRight: {
-                                        // Save to favorites
-                                        viewModel.toggleFavorite(top)
-                                        viewModel.toggleFavorite(bottom)
+                                        // ✅ Save the WHOLE outfit
+                                        viewModel.addFavoriteOutfit(top: top, bottom: bottom)
                                         nextOutfit()
                                     },
                                     onSwipeLeft: {
@@ -222,7 +221,6 @@ struct SwipeableOutfitCard: View {
                 VStack {
                     HStack {
                         if offset.width > 0 {
-                            // Right swipe - Heart
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 60))
                                 .foregroundColor(.green)
@@ -230,7 +228,6 @@ struct SwipeableOutfitCard: View {
                         }
                         Spacer()
                         if offset.width < 0 {
-                            // Left swipe - X
                             Image(systemName: "xmark")
                                 .font(.system(size: 60))
                                 .foregroundColor(.red)
@@ -255,7 +252,6 @@ struct SwipeableOutfitCard: View {
                 }
                 .onEnded { gesture in
                     if abs(gesture.translation.width) > 120 {
-                        // Swipe completed
                         withAnimation(.easeOut(duration: 0.3)) {
                             offset.width = gesture.translation.width > 0 ? 500 : -500
                             opacity = 0
@@ -267,13 +263,11 @@ struct SwipeableOutfitCard: View {
                             } else {
                                 onSwipeLeft()
                             }
-                            // Reset for next card
                             offset = .zero
                             rotation = 0
                             opacity = 1
                         }
                     } else {
-                        // Snap back
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                             offset = .zero
                             rotation = 0
@@ -284,11 +278,9 @@ struct SwipeableOutfitCard: View {
     }
 }
 
-// MARK: - Diagonal divider shape
 private struct DiagonalDivider: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
-        // slight diagonal down to the right like your reference
         p.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.35))
         p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.65))
         return p
@@ -298,3 +290,4 @@ private struct DiagonalDivider: Shape {
 #Preview {
     MixMatchCardsView(viewModel: ClosetViewModel())
 }
+
