@@ -40,7 +40,7 @@ struct UploadClothesView: View {
                 .padding(.horizontal)
 
                 Text("Upload your\nclothes")
-                    .font(.system(size: 38, weight: .semibold, design: .serif))
+                    .font(.custom("American Typewriter", size: 38))
                     .multilineTextAlignment(.center)
 
                 // Upload box
@@ -71,8 +71,9 @@ struct UploadClothesView: View {
                 .padding(.horizontal, 24)
 
                 Text("Pick Clothing Catagory")
-                    .font(.system(size: 20, weight: .regular, design: .serif))
-
+                    .font(.custom("American Typewriter", size: 20))
+                    .foregroundColor(.black.opacity(0.6))
+                
                 Picker("Category", selection: $viewModel.category) {
                     Text("Top").tag(ClothingCategory.top)
                     Text("Bottom").tag(ClothingCategory.bottom)
@@ -104,7 +105,7 @@ struct UploadClothesView: View {
                     dismiss()
                 } label: {
                     Text("Save to closet")
-                        .font(.system(size: 20, weight: .semibold, design: .serif))
+                        .font(.custom("American Typewriter", size: 20))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
