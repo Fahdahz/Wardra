@@ -9,11 +9,12 @@
 
 import SwiftUI
 import Photos
+import CoreImage
+import UIKit
 
 struct CanvasView: View {
 
     @ObservedObject var viewModel: ClosetViewModel
-
     @State private var selectedTab: ClosetTab = .tops
 
     // ✅ عناصر انحطّت على الكانفاس
@@ -23,35 +24,25 @@ struct CanvasView: View {
     @State private var showSavedAlert = false
     @State private var showSaveErrorAlert = false
 
-    private enum ClosetTab {
-        case tops, bottoms
-    }
+    // ✅ Cache للألوان (عشان ما نحسب كل مرة)
+    @State private var colorCache: [UUID: UIColor] = [:]
 
-    // ✅ نفس اللوجك حق التصنيف
-    private var tops: [ClothingItem] {
-        viewModel.items.filter { $0.category == .top }
-    }
+    private enum ClosetTab { case tops, bottoms }
 
-    private var bottoms: [ClothingItem] {
-        viewModel.items.filter { $0.category == .bottom }
-    }
-
-    private var shownItems: [ClothingItem] {
-        selectedTab == .tops ? tops : bottoms
-    }
+    private var tops: [ClothingItem] { viewModel.items.filter { $0.category == .top } }
+    private var bottoms: [ClothingItem] { viewModel.items.filter { $0.category == .bottom } }
+    private var shownItems: [ClothingItem] { selectedTab == .tops ? tops : bottoms }
 
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
 
-            // ✅ style it your way
             let cardW = min(360, w * 0.90)
             let cardH = min(520, h * 0.66)
 
             ZStack {
-                Color("WardraBackground")
-                    .ignoresSafeArea()
+                Color("WardraBackground").ignoresSafeArea()
 
                 // ✅ Bottom strip
                 VStack {
@@ -64,12 +55,8 @@ struct CanvasView: View {
 
                     // Top buttons
                     HStack(spacing: 18) {
-                        pillButton(title: "Tops") {
-                            selectedTab = .tops
-                        }
-                        pillButton(title: "Bottoms") {
-                            selectedTab = .bottoms
-                        }
+                        pillButton(title: "Tops") { selectedTab = .tops }
+                        pillButton(title: "Bottoms") { selectedTab = .bottoms }
                     }
                     .padding(.top, 22)
                     .padding(.bottom, 14)
@@ -81,6 +68,7 @@ struct CanvasView: View {
                             .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 6)
 
                         VStack(spacing: 0) {
+
                             // Header strip
                             ZStack {
                                 Rectangle()
@@ -92,12 +80,18 @@ struct CanvasView: View {
                                     .foregroundStyle(.black)
                             }
 
-                            // ✅ مساحة الكانفاس اللي بتنحط عليها القطع (Drop + Move)
+                            // ✅ Banner حق الماتش (بين الهيدر والكانفاس)
+                            matchBanner
+                                .padding(.horizontal, 12)
+                                .padding(.top, 10)
+
+                            // ✅ مساحة الكانفاس
                             CanvasDropArea(
                                 viewModel: viewModel,
                                 placedItems: $placedItems,
                                 cardSize: CGSize(width: cardW, height: cardH)
                             )
+                            .padding(.top, 6)
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
@@ -105,7 +99,7 @@ struct CanvasView: View {
                     .padding(.top, 12)
                     .overlay(alignment: .leading) {
 
-                        // ✅ Save button (صار شغال)
+                        // ✅ Save button
                         Button {
                             saveCanvasImage(cardW: cardW, cardH: cardH)
                         } label: {
@@ -135,17 +129,143 @@ struct CanvasView: View {
             } message: {
                 Text("Please allow Photos access from Settings, then try again.")
             }
+          
         }
     }
 
-    // ✅ الشريط الوردي تحت + السلايدر حق القطع
+    // MARK: - Match Banner
+
+    private var matchBanner: some View {
+        Group {
+            if let result = computeMatchResultFromCanvas() {
+                MatchBannerView(result: result)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(result.title). \(result.message)")
+            } else {
+                // ما نعرض شيء إذا ما فيه Top + Bottom
+                EmptyView()
+            }
+        }
+    }
+
+    private func computeMatchResultFromCanvas() -> MatchResultUI? {
+        // آخر Top وآخر Bottom (الأقرب لفكرة "اختار قطعتين")
+        guard let topPlaced = placedItems.last(where: { placed in
+            viewModel.items.first(where: { $0.id == placed.itemID })?.category == .top
+        }),
+        let bottomPlaced = placedItems.last(where: { placed in
+            viewModel.items.first(where: { $0.id == placed.itemID })?.category == .bottom
+        }) else {
+            return nil
+        }
+
+        let topID = topPlaced.itemID
+        let bottomID = bottomPlaced.itemID
+
+        guard let topColor = colorForItem(id: topID),
+              let bottomColor = colorForItem(id: bottomID) else {
+            // لو فشل استخراج اللون (نادراً) نطلع نتيجة لطيفة
+            return MatchResultUI(
+                style: .okay,
+                title: "Okay match",
+                message: "Add a neutral layer/accessory to balance it."
+            )
+        }
+
+        return evaluateMatch(top: topColor, bottom: bottomColor)
+    }
+
+    private func evaluateMatch(top: UIColor, bottom: UIColor) -> MatchResultUI {
+        // 1) لو أحدهم Neutral => غالباً يمشي
+        if top.isNeutral || bottom.isNeutral {
+            return MatchResultUI(
+                style: .good,
+                title: "Good match ✅",
+                message: "Okay match Add a neutral layer/accessory to balance it."
+            )
+        }
+
+        // 2) التقييم حسب فرق السطوع (أفضل لعمى الألوان)
+        let diff = abs(top.relativeLuminance - bottom.relativeLuminance)
+
+        if diff >= 0.35 {
+            return MatchResultUI(
+                style: .good,
+                title: "Good match ✅",
+                message: "Okay match Add a neutral layer/accessory to balance it."
+            )
+        } else if diff >= 0.18 {
+            return MatchResultUI(
+                style: .okay,
+                title: "Okay match",
+                message: "Add a neutral layer/accessory to balance it."
+            )
+        } else {
+            return MatchResultUI(
+                style: .bad,
+                title: "Not recommended ❌",
+                message: "Try a lighter or darker piece"
+            )
+        }
+    }
+
+    // MARK: - Color Cache Helpers
+
+    private func preloadColorsForPlacedItems() {
+        // حضّري ألوان آخر القطع المضافة (تسريع)
+        for placed in placedItems {
+            if colorCache[placed.itemID] != nil { continue }
+            _ = colorForItem(id: placed.itemID)
+        }
+    }
+
+    private func colorForItem(id: UUID) -> UIColor? {
+        if let cached = colorCache[id] { return cached }
+
+        guard let item = viewModel.items.first(where: { $0.id == id }),
+              let img = item.image else { return nil } // ← لو اسمها مختلف عندك عدليه
+
+        let color = averageColor(from: img)
+        if let color {
+            colorCache[id] = color
+        }
+        return color
+    }
+
+    private func averageColor(from image: UIImage) -> UIColor? {
+        guard let ciImage = CIImage(image: image) else { return nil }
+        let context = CIContext(options: [.workingColorSpace: NSNull()])
+
+        let filter = CIFilter(name: "CIAreaAverage")!
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        filter.setValue(CIVector(cgRect: ciImage.extent), forKey: kCIInputExtentKey)
+
+        guard let output = filter.outputImage else { return nil }
+
+        var pixel = [UInt8](repeating: 0, count: 4)
+        context.render(output,
+                       toBitmap: &pixel,
+                       rowBytes: 4,
+                       bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
+                       format: .RGBA8,
+                       colorSpace: nil)
+
+        return UIColor(
+            red: CGFloat(pixel[0]) / 255.0,
+            green: CGFloat(pixel[1]) / 255.0,
+            blue: CGFloat(pixel[2]) / 255.0,
+            alpha: 1
+        )
+    }
+
+    // MARK: - Bottom strip
+
     private var bottomStrip: some View {
         ZStack(alignment: .leading) {
             Rectangle()
                 .fill(Color("lightpink").opacity(0.25))
                 .frame(height: 85)
 
-            // ✅ القطع (تتغير حسب Tops/Bottoms) + draggable
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(shownItems) { item in
@@ -155,7 +275,7 @@ struct CanvasView: View {
                             }
                     }
                 }
-                .padding(.leading, 18 + 78 + 18) // مساحة زر التحميل
+                .padding(.leading, 18 + 78 + 18)
                 .padding(.trailing, 18)
                 .padding(.vertical, 10)
             }
@@ -166,7 +286,6 @@ struct CanvasView: View {
         Button(action: action) {
             Text(title)
                 .font(.custom("American Typewriter", size: 20))
-                // ✅ التغيير المطلوب فقط: لون النص أسود
                 .foregroundColor(.black)
                 .frame(width: 140, height: 44)
                 .background(
@@ -177,9 +296,9 @@ struct CanvasView: View {
         .buttonStyle(.plain)
     }
 
-    // ✅ حفظ صورة: المربع الأبيض فقط + القطع اللي انحطّت
+    // MARK: - Save
+
     private func saveCanvasImage(cardW: CGFloat, cardH: CGFloat) {
-        // طلب صلاحية الإضافة للألبوم (Add Only)
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             DispatchQueue.main.async {
                 guard status == .authorized || status == .limited else {
@@ -187,7 +306,6 @@ struct CanvasView: View {
                     return
                 }
 
-                // نصوّر نفس الكارد بدون ظل/خلفية
                 let snapshot = CanvasSnapshotCard(
                     viewModel: viewModel,
                     placedItems: placedItems
@@ -205,7 +323,6 @@ struct CanvasView: View {
                         showSaveErrorAlert = true
                     }
                 } else {
-                    // Fallback بسيط (لو احتجتي دعم أقل من iOS16)
                     let controller = UIHostingController(rootView: snapshot)
                     let view = controller.view
 
@@ -226,13 +343,60 @@ struct CanvasView: View {
     }
 }
 
-// MARK: - Drop Area (يحط القطع + يسمح بتحريكها)
+// MARK: - Match Banner UI
+
+private enum MatchBannerStyle { case good, okay, bad }
+
+private struct MatchResultUI {
+    let style: MatchBannerStyle
+    let title: String
+    let message: String
+}
+
+private struct MatchBannerView: View {
+    let result: MatchResultUI
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(result.title)
+                .font(.custom("American Typewriter", size: 16))
+                .foregroundColor(.black)
+
+            Spacer(minLength: 8)
+
+            Text(result.message)
+                .font(.custom("American Typewriter", size: 14))
+                .foregroundColor(.black.opacity(0.85))
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(bannerBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color("WardraPink").opacity(0.55), lineWidth: 1)
+        )
+    }
+
+    private var bannerBackground: Color {
+        switch result.style {
+        case .good: return Color("lightpink").opacity(0.28)
+        case .okay: return Color("lightpink").opacity(0.22)
+        case .bad:  return Color("lightpink").opacity(0.18)
+        }
+    }
+}
+
+// MARK: - Drop Area
+
 private struct CanvasDropArea: View {
     @ObservedObject var viewModel: ClosetViewModel
     @Binding var placedItems: [PlacedCanvasItem]
     let cardSize: CGSize
 
-    // ✅ جديد: أي قطعة عليها وضع الحذف (تظهر X)
     @State private var selectedPlacedID: UUID? = nil
 
     var body: some View {
@@ -241,10 +405,8 @@ private struct CanvasDropArea: View {
             let canvasH = g.size.height
 
             ZStack {
-                // مساحة فاضية (الكانفاس)
                 Color.clear
 
-                // العناصر اللي انحطّت
                 ForEach($placedItems) { $placed in
                     if let item = viewModel.items.first(where: { $0.id == placed.itemID }),
                        let img = item.image {
@@ -256,10 +418,8 @@ private struct CanvasDropArea: View {
                                 .scaledToFit()
                                 .frame(width: placed.size.width, height: placed.size.height)
 
-                            // ✅ جديد: يظهر فقط للقطعة المختارة بالضغط المطوّل
                             if selectedPlacedID == placed.id {
                                 Button {
-                                    // حذف القطعة من الكانفاس
                                     placedItems.removeAll { $0.id == placed.id }
                                     selectedPlacedID = nil
                                 } label: {
@@ -284,7 +444,6 @@ private struct CanvasDropArea: View {
                                     )
                                 }
                         )
-                        // ✅ جديد: ضغط مطوّل يطلع زر X
                         .simultaneousGesture(
                             LongPressGesture(minimumDuration: 0.35)
                                 .onEnded { _ in
@@ -295,10 +454,7 @@ private struct CanvasDropArea: View {
                 }
             }
             .contentShape(Rectangle())
-            // ✅ جديد: أي ضغط على أي مكان بالكانفاس يشيل علامة الـ X
-            .onTapGesture {
-                selectedPlacedID = nil
-            }
+            .onTapGesture { selectedPlacedID = nil }
             .dropDestination(for: String.self) { items, location in
                 guard let uuidString = items.first,
                       let uuid = UUID(uuidString: uuidString) else { return false }
@@ -318,9 +474,7 @@ private struct CanvasDropArea: View {
                     )
                 )
 
-                // إذا كان فيه X ظاهر من قبل، نخفيه
                 selectedPlacedID = nil
-
                 return true
             }
         }
@@ -338,7 +492,8 @@ private struct CanvasDropArea: View {
     }
 }
 
-// MARK: - Snapshot Card (هذا اللي ينحفظ)
+// MARK: - Snapshot Card
+
 private struct CanvasSnapshotCard: View {
     @ObservedObject var viewModel: ClosetViewModel
     let placedItems: [PlacedCanvasItem]
@@ -381,7 +536,8 @@ private struct CanvasSnapshotCard: View {
     }
 }
 
-// ✅ مصغّر القطعة داخل الشريط
+// MARK: - Mini Thumb
+
 private struct MiniClothingThumb: View {
     let item: ClothingItem
 
@@ -411,7 +567,8 @@ private struct MiniClothingThumb: View {
     }
 }
 
-// ✅ عنصر محطوط على الكانفاس
+// MARK: - Placed Item
+
 private struct PlacedCanvasItem: Identifiable {
     let id: UUID = UUID()
     let itemID: UUID
@@ -419,9 +576,35 @@ private struct PlacedCanvasItem: Identifiable {
     var size: CGSize
 }
 
+// MARK: - UIColor Helpers (for match)
+
+private extension UIColor {
+    var relativeLuminance: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+
+        func f(_ c: CGFloat) -> CGFloat {
+            (c <= 0.03928) ? (c / 12.92) : pow((c + 0.055)/1.055, 2.4)
+        }
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    }
+
+    var isNeutral: Bool {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+
+        let maxV = max(r, g, b)
+        let minV = min(r, g, b)
+        let satApprox = maxV == 0 ? 0 : (maxV - minV) / maxV
+
+        return satApprox < 0.15
+    }
+}
+
 #Preview {
     CanvasView(viewModel: ClosetViewModel())
 }
+
 
 
 
