@@ -21,21 +21,28 @@ struct FavoritesView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-
+                
+                Rectangle()
+                    .fill(Color("WardraPink"))
+                    .frame(height: 3)
+                    .padding(.horizontal, 2)
+                    .padding(.top, 8)
+                
                 VStack(spacing: 10) {
                     ZStack {
-                        Image("hanger 2")
+                        Image("big_hanger")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 420, height: 120)
+                            .frame(width: 420)
+                            .padding(.top, -16)
 
                         Text("My Favorites")
-                            .font(.system(size: 30, weight: .semibold, design: .serif))
+                            .font(.custom("American Typewriter", size: 23))
                             .foregroundColor(.black)
-                            .offset(y: 10)
+                            .offset(y: 8)
                     }
                 }
-                .padding(.top, 10)
+                .padding(.top, 8)
                 .padding(.bottom, 20)
 
                 Divider()
@@ -61,7 +68,7 @@ struct FavoritesView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         // ✅ التغيير الوحيد: زودنا الـ spacing بين الكروت
-                        VStack(spacing: 60) {
+                        VStack(spacing: 50) {
                             ForEach(favoriteOutfits) { outfit in
                                 FavoriteOutfitCard(outfit: outfit, viewModel: viewModel)
                             }

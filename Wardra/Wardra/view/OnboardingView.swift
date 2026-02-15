@@ -27,11 +27,11 @@ struct OnboardingView: View {
                 
                 // Title
                 Text("Welcome!")
-                    .font(.system(size: 34, weight: .regular, design: .serif))
+                    .font(.custom("Snell Roundhand Bold", size: 38))
                     .foregroundColor(.black.opacity(0.75))
                 
                 Text("Please enter your name")
-                    .font(.system(size: 18, design: .serif))
+                    .font(.custom("American Typewriter", size: 18))
                     .foregroundColor(.black.opacity(0.6))
                 
                 // MARK: Text Field
@@ -65,7 +65,7 @@ struct OnboardingView: View {
                     }
                 } label: {
                     Text("My Closet")
-                        .font(.system(size: 18, weight: .semibold, design: .serif))
+                        .font(.custom("American Typewriter", size: 18))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 55)

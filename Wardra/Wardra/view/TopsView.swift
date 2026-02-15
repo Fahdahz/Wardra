@@ -20,22 +20,29 @@ struct TopsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
+                Rectangle()
+                        .fill(Color("WardraPink"))
+                        .frame(height: 3)
+                        .padding(.horizontal, 2)
+                        .padding(.top, 8)
 
                 // MARK: - Header
                 VStack(spacing: 10) {
+                    
 
                     // Hanger with centered title
                     ZStack {
-                        Image("hanger 2")
+                        Image("big_hanger")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 420, height: 120) // bigger hanger
+                            .frame(width: 420)
+                            .padding(.top, -19)
 
-                        // Centered text relative to the hanger
                         Text("Tops")
-                            .font(.system(size: 30, weight: .semibold, design: .serif)) // bigger text
+                            .font(.custom("American Typewriter", size: 23))
                             .foregroundColor(.black)
-                            .offset(y: 10) // adjust to sit in the hanger opening
+                            .offset(y: 6)
+
                     }
                 }
                 .padding(.top, 10)

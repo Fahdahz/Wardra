@@ -112,7 +112,6 @@ struct MixMatchCardsView: View {
                 .multilineTextAlignment(.center)
             
             Text("Add at least one top and one bottom\nto start creating outfits!")
-                .font(.custom("American Typewriter", size: 16))
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
             
@@ -136,15 +135,15 @@ struct MixMatchCardsView: View {
                 Image("big_hanger")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 320)
+                    .frame(width: 420)
                     .padding(.top, -10)
 
-                    .padding(.bottom,90)
+                    .padding(.bottom,70)
 
                 Text("Mix & Match")
-                    .font(.custom("American Typewriter", size: 18))
+                    .font(.custom("American Typewriter", size: 23))
                     .foregroundStyle(.black)
-                    .offset(y: -35)
+                    .offset(y: -25)
             }
         }
     }

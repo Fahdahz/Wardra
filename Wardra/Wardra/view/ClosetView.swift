@@ -9,23 +9,29 @@ import SwiftUI
 
 struct ClosetView: View {
     @StateObject private var viewModel = ClosetViewModel()
-    
-    var body: some View {
-        NavigationStack { // ✅ Added فقط عشان التنقل يشتغل
-            TabView {
 
-                CanvasView()
+    @State private var selectedTab = 2   // 👈 نخلي البداية Closet
+
+    var body: some View {
+        NavigationStack {
+            TabView(selection: $selectedTab) {
+
+                CanvasView(viewModel: viewModel)
                     .tabItem { Image("HangerS") }
+                    .tag(0)
 
                 MixMatchCardsView(viewModel: viewModel)
                     .tabItem { Image("cardtabar") }
+                    .tag(1)
 
                 ClosetContentView(viewModel: viewModel)
                     .tabItem { Image("tshirtS") }
+                    .tag(2)
             }
         }
     }
 }
+
 
 private struct ClosetContentView: View {
 
@@ -262,7 +268,7 @@ private struct ClosetContentView: View {
                     } label: {
                         Circle()
                             .fill(Color("WardraPink"))
-                            .frame(width: 65, height: 65)
+                            .frame(width: 60, height: 60)
                             .overlay(
                                 Image(systemName: "plus")
                                     .font(.system(size: 26))

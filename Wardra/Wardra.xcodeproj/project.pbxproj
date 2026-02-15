@@ -401,6 +401,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take clothing photos.\n";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs access to save your styled outfits to Photos.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to upload your clothes.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -436,6 +437,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take clothing photos.\n";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs access to save your styled outfits to Photos.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to upload your clothes.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
