@@ -17,7 +17,7 @@ struct ClosetView: View {
             TabView(selection: $selectedTab) {
 
                 CanvasView(viewModel: viewModel)
-                    .tabItem { Image("HangerS") }
+                    .tabItem { Image("tshirtS") }
                     .tag(0)
 
                 MixMatchCardsView(viewModel: viewModel)
@@ -25,7 +25,7 @@ struct ClosetView: View {
                     .tag(1)
 
                 ClosetContentView(viewModel: viewModel)
-                    .tabItem { Image("tshirtS") }
+                    .tabItem { Image("HangerS") }
                     .tag(2)
             }
         }

@@ -5,11 +5,7 @@
 //  Created by reyamnhf on 21/08/1447 AH.
 //
 //
-//  MixMatchCardsView.swift
-//  Wardra
-//
-//  Created by reyamnhf on 21/08/1447 AH.
-//
+
 import SwiftUI
 
 struct MixMatchCardsView: View {
@@ -19,20 +15,20 @@ struct MixMatchCardsView: View {
     @State private var currentBottomIndex = 0
     @State private var cardOffset: CGSize = .zero
     @State private var cardRotation: Double = 0
-    
+
     private var tops: [ClothingItem] {
         viewModel.items.filter { $0.category == .top }
     }
-    
+
     private var bottoms: [ClothingItem] {
         viewModel.items.filter { $0.category == .bottom }
     }
-    
+
     private var currentTop: ClothingItem? {
         guard !tops.isEmpty, currentTopIndex < tops.count else { return nil }
         return tops[currentTopIndex]
     }
-    
+
     private var currentBottom: ClothingItem? {
         guard !bottoms.isEmpty, currentBottomIndex < bottoms.count else { return nil }
         return bottoms[currentBottomIndex]
@@ -49,12 +45,12 @@ struct MixMatchCardsView: View {
                 VStack(spacing: 0) {
                     header
                         .padding(.top, 18)
-                    
+                        .padding(.bottom, 18)   // ✅ gives space before the cards
+
                     if tops.isEmpty || bottoms.isEmpty {
                         emptyStateView
                     } else {
                         ZStack {
-                            // back card
                             RoundedRectangle(cornerRadius: 30)
                                 .fill(.white)
                                 .frame(width: 300, height: 440)
@@ -63,25 +59,21 @@ struct MixMatchCardsView: View {
                                         y: 10)
                                 .offset(x: -18, y: 12)
 
-                            // swipe card
                             if let top = currentTop, let bottom = currentBottom {
                                 SwipeableOutfitCard(
                                     topItem: top,
                                     bottomItem: bottom,
                                     onSwipeRight: {
-                                        // ✅ Save the WHOLE outfit
                                         viewModel.addFavoriteOutfit(top: top, bottom: bottom)
                                         nextOutfit()
                                     },
                                     onSwipeLeft: {
-                                        // Discard
                                         nextOutfit()
                                     }
                                 )
                             }
                         }
-                        .padding(.top, 40)
-                        .padding(.top, -30)
+                        .padding(.top, 6) // ✅ card starts lower (no overlap)
                     }
 
                     Spacer()
@@ -90,46 +82,44 @@ struct MixMatchCardsView: View {
             }
         }
     }
-    
+
     private func nextOutfit() {
-        // Cycle through combinations
         currentTopIndex = (currentTopIndex + 1) % tops.count
         if currentTopIndex == 0 {
             currentBottomIndex = (currentBottomIndex + 1) % bottoms.count
         }
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
-            
+
             Image(systemName: "tshirt")
                 .font(.system(size: 60))
                 .foregroundColor(Color("WardraPink"))
-            
+
             Text("Add Items to Mix & Match")
                 .font(.custom("American Typewriter", size: 24))
                 .multilineTextAlignment(.center)
-            
+
             Text("Add at least one top and one bottom\nto start creating outfits!")
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-            
+
             Spacer()
         }
         .padding()
     }
 
-    // MARK: - Header exactly like reference (line + hanger + title centered)
+    // MARK: - Header (line + hanger + title + clarification)
     private var header: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 8) {
 
             Rectangle()
                 .fill(Color("WardraPink"))
                 .frame(height: 3)
                 .padding(.horizontal, 2)
                 .padding(.top, 8)
-            
 
             ZStack {
                 Image("big_hanger")
@@ -137,14 +127,29 @@ struct MixMatchCardsView: View {
                     .scaledToFit()
                     .frame(width: 420)
                     .padding(.top, -10)
-
-                    .padding(.bottom,70)
+                    .padding(.bottom, 70)
 
                 Text("Mix & Match")
                     .font(.custom("American Typewriter", size: 23))
                     .foregroundStyle(.black)
                     .offset(y: -25)
             }
+
+            // ✅ Clarification (now it won’t collide with the card)
+            Text("Swipe Left to Discard ·  Swipe Right to Favorite")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(.black.opacity(0.55))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(.white.opacity(0.65))
+                )
+                .overlay(
+                    Capsule().stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+                .padding(.top, -18) // small tighten, not negative enough to overlap
+                .offset(y: -35)
         }
     }
 }
@@ -154,11 +159,11 @@ struct SwipeableOutfitCard: View {
     let bottomItem: ClothingItem
     let onSwipeRight: () -> Void
     let onSwipeLeft: () -> Void
-    
+
     @State private var offset: CGSize = .zero
     @State private var rotation: Double = 0
     @State private var opacity: Double = 1.0
-    
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 30)
@@ -169,7 +174,6 @@ struct SwipeableOutfitCard: View {
 
             VStack(spacing: 0) {
 
-                // pink band
                 Rectangle()
                     .fill(Color("WardraPink").opacity(0.18))
                     .frame(height: 50)
@@ -214,8 +218,7 @@ struct SwipeableOutfitCard: View {
                                   design: .serif))
                     .padding(.bottom, 20)
             }
-            
-            // Swipe indicators
+
             if abs(offset.width) > 20 {
                 VStack {
                     HStack {
@@ -255,7 +258,7 @@ struct SwipeableOutfitCard: View {
                             offset.width = gesture.translation.width > 0 ? 500 : -500
                             opacity = 0
                         }
-                        
+
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             if gesture.translation.width > 0 {
                                 onSwipeRight()
@@ -289,4 +292,3 @@ private struct DiagonalDivider: Shape {
 #Preview {
     MixMatchCardsView(viewModel: ClosetViewModel())
 }
-
